@@ -35,6 +35,14 @@ mtcars %>% group_by(cyl) %>% nest()
 mtcars %>% group_by(cyl) %>% nest() %>% slice(1) %>% unnest()
 
 
+# retaining the original dataframe
+complex_function3.5 <- function(cyl, data) {
+        data %>% mutate(id = cyl, n = nrow(data), half = cyl/2)
+}
+mtcars %>% group_by(cyl) %>% nest() %>% pmap_dfr(., .f = complex_function3.5) %>% data.frame()
+
+
+
 ############################################################33
 
 
@@ -49,16 +57,18 @@ test(id_var = "cyl", df = mtcars)
 
 # test on mtcars
 complex_function4 <- function(id_var, data) {
-        tibble(id = id_var, n = nrow(data), half = id_var / 2)
+        # tibble(id = id_var, n = nrow(data), half = id_var / 2)
+        data %>% mutate(id = cyl, n = nrow(data), half = cyl/2)
 }
 
 mtcars_4cyl <- mtcars %>% filter(cyl == 4)
-complex_function4(id_var = 6, data = mtcars_4cyl)
+complex_function4(id_var = 4, data = mtcars_4cyl)
 
 
 # test using tidy eval
 complex_function4 <- function(id_var, data) {
-        tibble(id = id_var, n = nrow(data), half = id_var / 2)
+        # tibble(id = id_var, n = nrow(data), half = id_var / 2)
+        data %>% mutate(id = cyl, n = nrow(data), half = cyl/2)
 }
 
 id_var_sym <- sym("cyl")
@@ -68,24 +78,10 @@ id_var_sym <- sym("mpg")
 mtcars %>% mutate(id_var = !!id_var_sym) %>% group_by(id_var) %>% nest() %>% pmap_dfr(., .f = complex_function4)
 
 
-
-
-
-
-
 ################################################
 
 
-
-
-
-
-
-
-
-
-
-
+# random vignettes for tibble
 
 df <- tibble(
         x = 1:3,
