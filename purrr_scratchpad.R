@@ -1,3 +1,7 @@
+library(purrr)
+
+# https://gist.github.com/jennybc/e7da3b1be68be611a16ea64f573537ee
+
 big_df <- mtcars %>% 
         select(cyl, mpg, disp) %>% 
         arrange(cyl) %>% 
@@ -9,18 +13,84 @@ complex_function <- function(ID, data) {
         tibble(ID = ID, n = nrow(data), half = ID / 2)
 }
 
-complex_func2 <- function(ID, data) {
-        tibble(
-                ID = ID,
-                half = ID / 2,
-                N = nrow(data)
-        )
+big_df %>% 
+        group_by(ID) %>%
+        nest() %>%
+        pmap_dfr(complex_function)
+
+# note that pmap_dfr automatically unnests the input for you, so unnest() in the function is unnecessary
+complex_function2 <- function(ID, data) {
+        # data2 <- data %>% unnest()
+        data2 <- data
+        data2 <- data2 %>% mutate(new_col = "yes")
+        data2
 }
 
 big_df %>% 
         group_by(ID) %>%
         nest() %>%
-        pmap_dfr(complex_function)
+        pmap_dfr(complex_function2)
+
+# use ... to absorb other column names so they don't need to be listed as explicit arguments to function
+complex_function2 <- function(data, ...) {
+        # data2 <- data %>% unnest()
+        data2 <- data
+        data2 <- data2 %>% mutate(new_col = "yes")
+        data2
+}
+
+big_df %>% 
+        group_by(ID) %>%
+        nest() %>%
+        pmap_dfr(complex_function2)
+
+
+############################################################
+
+
+# testing w tidy eval
+
+# note if you unnest the tibble with group_by var and data, you get df that retains group_by var 
+big_df %>% 
+        group_by(ID) %>%
+        nest() %>% slice(1) %>% unnest()
+
+# note if you save just the data and then unnest it, you no longer have the group_by var
+data <- big_df %>% 
+        group_by(ID) %>%
+        nest() %>% slice(1) %>% select(data)
+data
+data %>% unnest()
+
+id_var <- "mpg"
+complex_function2 <- function(data, ...) {
+        # data2 <- data %>% unnest()
+        id_var_sym <- sym(id_var)
+        data2 <- data
+        data2 <- data2 %>% mutate(new_col = "yes") %>% select(!!id_var_sym, new_col)
+        data2
+}
+
+big_df %>% 
+        group_by(ID) %>%
+        nest() %>%
+        pmap_dfr(complex_function2, .id = "id")
+
+# renaming grouping variable so we can access it inside function using tidy eval
+id_var <- "mpg"
+grouping_var_sym <- sym("ID")
+
+complex_function2 <- function(grouping_var, data) {
+        id_var_sym <- sym(id_var)
+        data %>% mutate(id = grouping_var, n = nrow(data), half = grouping_var/2)
+}
+
+big_df %>% rename(grouping_var = !!grouping_var_sym) %>%
+        group_by(grouping_var) %>%
+        nest() %>%
+        pmap_dfr(complex_function2, .id = "id")
+
+
 
 ################################################
 
@@ -40,42 +110,6 @@ complex_function3.5 <- function(cyl, data) {
         data %>% mutate(id = cyl, n = nrow(data), half = cyl/2)
 }
 mtcars %>% group_by(cyl) %>% nest() %>% pmap_dfr(., .f = complex_function3.5) %>% data.frame()
-
-
-
-############################################################33
-
-
-# pmap with tidy eval
-# basic test
-test <- function(id_var, df) {
-        id_var_sym <- sym(id_var)
-        df %>% select(!!id_var_sym)
-}
-test(id_var = "cyl", df = mtcars)
-
-
-# test on mtcars
-complex_function4 <- function(id_var, data) {
-        # tibble(id = id_var, n = nrow(data), half = id_var / 2)
-        data %>% mutate(id = cyl, n = nrow(data), half = cyl/2)
-}
-
-mtcars_4cyl <- mtcars %>% filter(cyl == 4)
-complex_function4(id_var = 4, data = mtcars_4cyl)
-
-
-# test using tidy eval
-complex_function4 <- function(id_var, data) {
-        # tibble(id = id_var, n = nrow(data), half = id_var / 2)
-        data %>% mutate(id = cyl, n = nrow(data), half = cyl/2)
-}
-
-id_var_sym <- sym("cyl")
-mtcars %>% mutate(id_var = !!id_var_sym) %>% group_by(id_var) %>% nest() %>% pmap_dfr(., .f = complex_function4)
-
-id_var_sym <- sym("mpg")
-mtcars %>% mutate(id_var = !!id_var_sym) %>% group_by(id_var) %>% nest() %>% pmap_dfr(., .f = complex_function4)
 
 
 ################################################
