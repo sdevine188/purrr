@@ -62,34 +62,34 @@ data <- big_df %>%
 data
 data %>% unnest()
 
-id_var <- "mpg"
+specific_var <- "mpg"
 complex_function2 <- function(data, ...) {
         # data2 <- data %>% unnest()
-        id_var_sym <- sym(id_var)
+        specific_var_sym <- sym(specific_var)
         data2 <- data
-        data2 <- data2 %>% mutate(new_col = "yes") %>% select(!!id_var_sym, new_col)
+        data2 <- data2 %>% mutate(new_col = "yes") %>% select(!!specific_var_sym, new_col)
         data2
 }
 
 big_df %>% 
         group_by(ID) %>%
         nest() %>%
-        pmap_dfr(complex_function2, .id = "id")
+        pmap_dfr(complex_function2, .id = "grouping_var")
 
 # renaming grouping variable so we can access it inside function using tidy eval
-id_var <- "mpg"
-grouping_var_sym <- sym("ID")
-
 complex_function2 <- function(grouping_var, data) {
-        id_var_sym <- sym(id_var)
-        data %>% mutate(id = grouping_var, n = nrow(data), half = grouping_var/2)
+        specific_var_sym <- sym(specific_var)
+        data %>% mutate(grouping_variable = grouping_var, n = nrow(data), half = grouping_var/2, 
+                        specific_var2 = !!specific_var_sym + 1)
 }
+
+specific_var <- "mpg"
+grouping_var_sym <- sym("ID")
 
 big_df %>% rename(grouping_var = !!grouping_var_sym) %>%
         group_by(grouping_var) %>%
         nest() %>%
-        pmap_dfr(complex_function2, .id = "id")
-
+        pmap_dfr(.l = ., .f = complex_function2, .id = "originated_from_which_grouped_df")
 
 
 ################################################
