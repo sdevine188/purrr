@@ -95,6 +95,29 @@ big_df %>% rename(grouping_var = !!grouping_var_sym) %>%
 ################################################
 
 
+# simple iteration over list like a for loop using map
+starwars %>% map(.x = 1:5, .f = ~ rep("test", times = 3))
+starwars %>% map(.x = 1:5, .f = ~ rep("test", times = 3)) %>% unlist()
+
+
+####################################################
+
+
+# use map2 to creat tibble with tidy eval assigning the variable names and values
+var_names <- c("new_var1", "new_var2")
+values <- list(vector1 = c(1, 2, 3, 4), vector2 = c(5, 6, 7, 8))
+
+create_tbl <- function(.x, .y, ...){
+        var_name_sym <- sym(.x)
+        tibble(!!var_name_sym := .y)
+}
+map2(.x = var_names, .y = values, .f = create_tbl)
+map2(.x = var_names, .y = values, .f = create_tbl) %>% bind_cols(.)
+
+
+#################################################
+
+
 # split, apply, combine with pmap
 complex_function3 <- function(cyl, data) {
         tibble(id = cyl, n = nrow(data), half = cyl / 2)
