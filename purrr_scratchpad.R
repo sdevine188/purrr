@@ -2,6 +2,26 @@ library(purrr)
 
 # https://gist.github.com/jennybc/e7da3b1be68be611a16ea64f573537ee
 
+# row operations on a dataframe, 
+# similar functionality to mutate, but could include more advanced functions
+
+test_tbl <- tibble(var1 = c(1, 2, 3), var2 = c(4, 5, 6), var3 = c(7, 8, 9))
+test_tbl
+
+combine_var1_and_var2 <- function(var1, var2, ...){
+        var1 + var2
+}
+
+
+pmap(.l = test_tbl, .f = combine_var1_and_var2)
+test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2)
+test_tbl %>% pmap(.l = ., .f = function(var1, var2, ...) { var1 + var2 })
+test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2) %>% unlist() %>% tibble(combined_var = .)
+
+
+###################################################
+
+
 big_df <- mtcars %>% 
         select(cyl, mpg, disp) %>% 
         arrange(cyl) %>% 
@@ -95,6 +115,19 @@ big_df %>% rename(grouping_var = !!grouping_var_sym) %>%
 ################################################
 
 
+# use pmap inside mutate to generate multiple duplicate rows
+params <- expand.grid(param_a = c(2, 4, 6)
+                      ,param_b = c(3, 6, 9)
+                      ,param_c = c(50, 100)
+                      ,param_d = c(1, 0))
+params
+
+as.tbl(params) %>% mutate(test_var = pmap(., function(param_a, param_b, ...){ rep(5, times = param_a) * param_b })) %>% unnest()
+
+
+#################################################
+
+
 # simple iteration over list like a for loop using map
 starwars %>% map(.x = 1:5, .f = ~ rep("test", times = 3))
 starwars %>% map(.x = 1:5, .f = ~ rep("test", times = 3)) %>% unlist()
@@ -115,6 +148,29 @@ map2(.x = var_names, .y = values, .f = create_tbl)
 map2(.x = var_names, .y = values, .f = create_tbl) %>% bind_cols(.)
 
 
+############################################################
+
+
+# map a function within a mapped function, passing a variable created from outer function into the inner function
+test1 <- c("test nevada", "test texas", "test alaska", "test maine", "test florida")
+test2 <- c("nevada", "alaska", "alabama")
+
+inner_function <- function(.x, .y){
+        current_test1 <- .x
+        current_test2 <- .y
+        str_detect(string = current_test1, pattern = regex(current_test2, ignore_case = TRUE))
+}
+
+outer_function <- function(.x) {
+        current_test1 <- .x
+        map2(.x = current_test1, .y = test2, .f = inner_function)
+}
+
+map(.x = test1, .f = outer_function)
+
+
+###################################################
+################################################
 #################################################
 
 
