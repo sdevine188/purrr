@@ -1,11 +1,25 @@
 library(purrr)
+library(dplyr)
+library(rlang)
+library(tidyr)
+
+
+# create new variable using mutate computed by mapping function to an existing variable
+# by default, map will apply function to all variables when passed a tbl
+# obviously you don't need to map a simple function adding one, but this can handle more complex functions
+starwars %>% mutate(height2 = unlist(map(.x = .$height, .f = ~ .x + 1))) %>% select(height, height2)
+
+
+############################################################################
+
 
 # https://gist.github.com/jennybc/e7da3b1be68be611a16ea64f573537ee
 
 # row operations on a dataframe, 
 # similar functionality to mutate, but could include more advanced functions
 
-test_tbl <- tibble(var1 = c(1, 2, 3), var2 = c(4, 5, 6), var3 = c(7, 8, 9))
+test_tbl <- tibble(var1 = c(1, 2, 3), var2 = c(4, 5, 6), var3 = c(7, 8, 9), 
+                   var4 = c("123, 456, 789", "234, 567, 890", "345, 678, 901"))
 test_tbl
 
 combine_var1_and_var2 <- function(var1, var2, ...){
