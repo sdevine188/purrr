@@ -13,6 +13,49 @@ starwars %>% mutate(height2 = unlist(map(.x = .$height, .f = ~ .x + 1))) %>% sel
 ############################################################################
 
 
+# build a function that operates differently depending on the data used as an input
+# data can be input as argument using a string (and so does not need to be hard-coded)
+# map this function, with the data_input as an argument
+# the list that map iterates over is not part of the data, but instead a seperate list (variable names in this case)
+
+# split starwars into two datasets
+starwars1 <- starwars %>% slice(1:50) %>% mutate(starwars1_only_var = runif(n = nrow(.), min = 0, max = 100))
+glimpse(starwars1)
+
+starwars2 <- starwars %>% slice(51:nrow(.)) %>% mutate(starwars2_only_var = runif(n = nrow(.), min = 0, max = 100))
+glimpse(starwars2)
+
+# create list of variables to iterate over
+var_list <- c("starwars1_only_var", "starwars2_only_var")
+
+# create strings to reference datasets
+data_input1 <- "starwars1"
+data_input2 <- "starwars2"
+
+# create function 
+get_avg_of_var_depending_on_data_input <- function(.x, data_input) {
+        
+        # get data
+        data <- eval(parse(text = data_input))
+        
+        # get current_var_name_sym
+        current_var_name <- .x
+        current_var_name_sym <- sym(current_var_name)
+        
+        # check if data contains current_var_name, and if so get avg for current_var_name
+        if(current_var_name %in% names(data)) {
+                data %>% summarize(avg = mean(!!current_var_name_sym))
+        }
+}
+
+# apply get_avg_of_var_depending_on_data_input function
+map_dfr(.x = var_list, .f = ~ get_avg_of_var_depending_on_data_input(.x, data_input = data_input1))
+map_dfr(.x = var_list, .f = ~ get_avg_of_var_depending_on_data_input(.x, data_input = data_input2))
+
+
+############################################################################
+
+
 # https://gist.github.com/jennybc/e7da3b1be68be611a16ea64f573537ee
 
 # row operations on a dataframe, 
