@@ -79,6 +79,66 @@ test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2) %>% unlist() %>% tibble(co
 ###################################################
 
 
+# create a counter, or other placeholder variable, in purrr using the <<- assignement operator to push 
+# <<- pushes assignment up one parent environment
+# this is useful in purrr functions, since a variable assigned in a loop will not retain value in subsequent iterations
+# instead, the variable will always re-initialize each iteration at its value in the parent environment
+
+# initialize counter outside function
+counter <- 0
+# rm(counter)
+
+# create update_counter function
+update_counter <- function(...) {
+        
+        # update counter
+        # using normal assignment operator will result in counter always = 1, because it initializes each loop = 0
+        # counter <- counter + 1
+        counter <<- counter + 1
+        counter
+}
+
+# call function
+map(.x = 10:15, .f = update_counter)
+
+
+###################################################
+
+
+# use pmap to iterate through rows of tibble, updating a placeholder value based on most recent cell value
+
+# for silly example, say i want to add variable for what "team" starwars characters are on
+# and that the team is decided by human captains; team number = human's height
+# so every human record is the captain for all records until the next human
+starwars
+
+# need to define current_team outside of the function, so that it can be overwritten and retained during loops
+current_team <- NA
+# rm(current_team)
+
+# create assign_team function
+assign_team <- function(name, species, height, ...) {
+
+        # overwrite current_team for each new Human captain
+        # note use of <<- assignment operator to push up one parent environment
+        if(!is.na(species) & species == "Human") {
+                current_team <<- height
+        }
+
+        # create output tibble showing each character and their team
+        output <- tibble(name = name, species = species) %>% mutate(team = current_team)
+        output
+        
+}
+
+# call assign_team function
+starwars_w_teams <- pmap_dfr(.l = starwars, .f = assign_team)
+starwars_w_teams
+
+
+###################################################
+
+
 big_df <- mtcars %>% 
         select(cyl, mpg, disp) %>% 
         arrange(cyl) %>% 
