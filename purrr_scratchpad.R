@@ -1,3 +1,4 @@
+library(tidyverse)
 library(purrr)
 library(dplyr)
 library(rlang)
@@ -7,6 +8,7 @@ library(tidyr)
 # create new variable using mutate computed by mapping function to an existing variable
 # by default, map will apply function to all variables when passed a tbl
 # obviously you don't need to map a simple function adding one, but this can handle more complex functions
+starwars %>% mutate(height2 = unlist(map(.x = .$height, .f = function(.x, ...) {.x + 1} ))) %>% select(height, height2)
 starwars %>% mutate(height2 = unlist(map(.x = .$height, .f = ~ .x + 1))) %>% select(height, height2)
 
 
