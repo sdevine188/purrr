@@ -138,7 +138,51 @@ starwars_w_teams <- pmap_dfr(.l = starwars, .f = assign_team)
 starwars_w_teams
 
 
-###################################################
+######################################################
+
+
+# use pmap with groups using nested tbls to conduct operations
+# you may be able to use group_by/summarize, or mutate/case_when to accomplish same thing
+# but it seems useful to have the ability to fully control the grouped tbls, instead of 
+# being reliant on handling them through summarize or mutate
+
+# get toy data
+tbl <- starwars %>% select(name, mass, species)
+
+# as a nonsensical example, say i want to collapse all the records where species = droid
+# into a single record, with their mass summed
+# this would take some thought using summarize / mutate, but is straightforward with nest/pmap
+
+# create collapse_droid_records function
+collapse_droid_records <- function(species, data, ...) {
+        
+        # get current_species
+        # could also just reference species instead of grouping_var
+        current_species <- data %>% distinct(grouping_var) %>% pull(grouping_var)
+        
+        # collapse droid records according to any arbitrary rules
+       if(current_species == "Droid" & !is.na(current_species)) {
+
+               name <- "skynet"
+               mass <- data %>% summarize(mass_sum = sum(mass, na.rm = TRUE)) %>% pull(mass_sum)
+               grouping_var <- data %>% distinct(grouping_var) %>% pull(grouping_var)
+
+               # combine and return output
+               output <- tibble(name = name, mass = mass, grouping_var = grouping_var)
+               return(output)
+
+       } else {
+               # otherwise if species/grouping_var != droid, just return original tbl
+               return(data)
+       }
+}
+
+tbl %>% mutate(grouping_var = species) %>% group_by(species) %>% nest() %>% 
+        pmap_dfr(.l = ., .f = collapse_droid_records) %>%
+        rename(species = grouping_var) %>% filter(species %in% c("Human", "Droid")) %>% data.frame()
+
+
+#######################################################
 
 
 big_df <- mtcars %>% 
