@@ -138,13 +138,21 @@ starwars_w_teams <- pmap_dfr(.l = starwars, .f = assign_team)
 starwars_w_teams
 
 
-######################################################
+###########################################################################
 
 
 # use pmap with groups using nested tbls to conduct operations
 # you may be able to use group_by/summarize, or mutate/case_when to accomplish same thing
 # but it seems useful to have the ability to fully control the grouped tbls, instead of 
 # being reliant on handling them through summarize or mutate
+
+# also added a progress counter showing percentage of groups completed
+# using preserve_order_for_group_indices() function in the assorted_helper_scripts folder
+# since group_indices by default orders groups alphabetically instead of using order of appearance in data
+# create preserve_order_for_group_indices function
+preserve_order_for_group_indices <- function(x) {
+        match(x, unique(x))
+}
 
 # get toy data
 tbl <- starwars %>% select(name, mass, species)
@@ -155,6 +163,13 @@ tbl <- starwars %>% select(name, mass, species)
 
 # create collapse_droid_records function
 collapse_droid_records <- function(species, data, ...) {
+        
+        # get pct_groups_completed
+        pct_groups_completed <- (data %>% slice(1) %>% pull(group_index) / 
+                data %>% slice(1) %>% pull(group_index_count)) * 100
+        
+        # print pct progress
+        print(str_c(round(pct_groups_completed, digits = 2), "% completed"))
         
         # get current_species
         # could also just reference species instead of grouping_var
@@ -177,7 +192,9 @@ collapse_droid_records <- function(species, data, ...) {
        }
 }
 
-tbl %>% mutate(grouping_var = species) %>% group_by(species) %>% nest() %>% 
+tbl %>% mutate(grouping_var = species) %>%
+        mutate(group_index = group_indices(., grouping_var) %>% preserve_order_for_group_indices(),
+               group_index_count = n_distinct(group_index)) %>% group_by(species) %>% nest() %>% 
         pmap_dfr(.l = ., .f = collapse_droid_records) %>%
         rename(species = grouping_var) %>% filter(species %in% c("Human", "Droid")) %>% data.frame()
 
