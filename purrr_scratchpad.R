@@ -49,7 +49,7 @@ pmap_dfr(.l = starwars %>% head(), .f = add_mass_and_height_w_error)
 
 
 # create nested_add_mass_and_height function
-nested_add_mass_and_height <- function(data, ...) {
+nested_add_mass_and_height <- function(data, string_value, ...) {
         
         # add mass and height
         return(tibble(mass = data %>% pull(mass), height = data %>% pull(height),
@@ -58,6 +58,26 @@ nested_add_mass_and_height <- function(data, ...) {
 }
 
 starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., .f = nested_add_mass_and_height)
+
+
+##################
+
+
+# create nested_add_mass_and_height_w_other_args function
+nested_add_mass_and_height_w_other_args <- function(data, string_value, ...) {
+        
+        # add mass and height
+        return(tibble(mass = data %>% pull(mass), height = data %>% pull(height),
+                      sum = data %>% mutate(sum = mass + height) %>% pull(sum),
+                      string_value = string_value))
+        
+}
+
+# note that you can't just pass .l though, the way you pass .x, you need to pass it as just a dot (.)
+starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., 
+                .f = ~ nested_add_mass_and_height_w_other_args(data = .l, string_value = "test"))
+starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., 
+                .f = ~ nested_add_mass_and_height_w_other_args(data = ., string_value = "test"))
 
 
 ###############
