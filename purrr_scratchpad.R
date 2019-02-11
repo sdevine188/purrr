@@ -28,11 +28,12 @@ map_dfr(.x = starwars %>% select(mass) %>% head(), .f = ~ add_one(value = .x))
 starwars %>% select(mass) %>% head()
 
 
-################################################################################
+###############################################################################
 
 
-# show that you can must provide variable names to function used in pmap
-# you can't automatically access them via having passed the dots
+# show that if you want access to all variables in a function used in pmap,
+# the best way is to just pass pmap a nested tbl, which enters function as "data", and has all variables accessible
+# you can't automatically access unnames variables from an unnested tbl via having passed the dots
 
 # create add_mass_and_height function
 add_mass_and_height_w_error <- function(mass, height, ...) {
@@ -47,7 +48,22 @@ pmap_dfr(.l = starwars %>% head(), .f = add_mass_and_height_w_error)
 ##############
 
 
-# without error, using only named variables
+# create nested_add_mass_and_height function
+nested_add_mass_and_height <- function(data, ...) {
+        
+        # add mass and height
+        return(tibble(mass = data %>% pull(mass), height = data %>% pull(height),
+                      sum = data %>% mutate(sum = mass + height) %>% pull(sum)))
+        
+}
+
+starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., .f = nested_add_mass_and_height)
+
+
+###############
+
+
+# also can explicitly pass named variables you wanted, but it seems less flexible than passing the nested tbl
 
 # create add_mass_and_height function
 add_mass_and_height <- function(mass, height, ...) {
