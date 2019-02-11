@@ -15,6 +15,53 @@ starwars %>% mutate(height2 = unlist(map(.x = .$height, .f = ~ .x + 1))) %>% sel
 ############################################################################
 
 
+# just showing that you can provide the iterator .x as a named argument using map
+
+# create add_one function
+add_one <- function(value) {
+        
+        return(value + 1)
+}
+
+map_dfr(.x = starwars %>% select(mass) %>% head(), .f = add_one)
+map_dfr(.x = starwars %>% select(mass) %>% head(), .f = ~ add_one(value = .x))
+starwars %>% select(mass) %>% head()
+
+
+################################################################################
+
+
+# show that you can must provide variable names to function used in pmap
+# you can't automatically access them via having passed the dots
+
+# create add_mass_and_height function
+add_mass_and_height_w_error <- function(mass, height, ...) {
+        
+        # add mass and height
+        return(tibble(mass = mass, height = height, eye_color = eye_color, sum = mass + height))
+}
+
+pmap_dfr(.l = starwars %>% head(), .f = add_mass_and_height_w_error)
+
+
+##############
+
+
+# without error, using only named variables
+
+# create add_mass_and_height function
+add_mass_and_height <- function(mass, height, ...) {
+        
+        # add mass and height
+        return(tibble(mass = mass, height = height, sum = mass + height))
+}
+
+pmap_dfr(.l = starwars %>% head(), .f = add_mass_and_height)
+
+
+############################################################################
+
+
 # build a function that operates differently depending on the data used as an input
 # data can be input as argument using a string (and so does not need to be hard-coded)
 # map this function, with the data_input as an argument
@@ -35,13 +82,13 @@ data_input1 <- "starwars1"
 data_input2 <- "starwars2"
 
 # create function 
-get_avg_of_var_depending_on_data_input <- function(.x, data_input) {
+get_avg_of_var_depending_on_data_input <- function(var, data_input) {
         
         # get data
         data <- eval(parse(text = data_input))
         
         # get current_var_name_sym
-        current_var_name <- .x
+        current_var_name <- var
         current_var_name_sym <- sym(current_var_name)
         
         # check if data contains current_var_name, and if so get avg for current_var_name
@@ -51,8 +98,9 @@ get_avg_of_var_depending_on_data_input <- function(.x, data_input) {
 }
 
 # apply get_avg_of_var_depending_on_data_input function
-map_dfr(.x = var_list, .f = ~ get_avg_of_var_depending_on_data_input(.x, data_input = data_input1))
-map_dfr(.x = var_list, .f = ~ get_avg_of_var_depending_on_data_input(.x, data_input = data_input2))
+# note you can name the iterator .x in the function
+map_dfr(.x = var_list, .f = ~ get_avg_of_var_depending_on_data_input(var = .x, data_input = data_input1))
+map_dfr(.x = var_list, .f = ~ get_avg_of_var_depending_on_data_input(var = .x, data_input = data_input2))
 
 
 ############################################################################
