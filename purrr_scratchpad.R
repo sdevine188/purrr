@@ -5,6 +5,85 @@ library(rlang)
 library(tidyr)
 
 
+# use walk to get side effect of a function, instead of the output
+# useful for things like updating variables, or printing, etc where you don't want any output
+# to update a local variable from inside a function, use the <<- assignment operator for "one level up" assingments 
+
+# create starwars2 with new_height variable that will be updated using walk
+starwars2 <- starwars %>% mutate(new_height = 0)
+
+# create update_new_height_variable function
+update_new_height_variable <- function(current_row_number, current_height) {
+        
+        # update starwars2 new_height variable
+        starwars2$new_height[current_row_number] <<- current_height + 1
+        print(str_c("the new_height value is ", starwars2$new_height[current_row_number]))
+}
+
+# call update_new_height_variable
+starwars %>% mutate(row_number = row_number(), height = ifelse(is.na(height), 0, height)) %>% 
+        select(row_number, height) %>% 
+        walk2(.x = .$row_number, .y = .$height, 
+              .f = ~ update_new_height_variable(current_row_number = .x, current_height = .y))
+
+# inspect new_height
+starwars2 %>% select(height, new_height)
+
+
+####################
+
+
+# same thing using pwalk
+
+# create starwars2 with new_height variable that will be updated using walk
+starwars2 <- starwars %>% mutate(new_height = 0)
+
+# create update_new_height_variable_w_pwalk function
+update_new_height_variable_w_pwalk <- function(data, ...) {
+        
+        # update starwars2 new_height variable
+        starwars2$new_height[data %>% pull(row_number)] <<- data %>% pull(height) + 1
+        print(str_c("the new_height value is ", starwars2$new_height[data %>% pull(row_number)]))
+}
+
+# call update_new_height_variable_w_pwalk
+starwars %>% mutate(row_number = row_number(), height = ifelse(is.na(height), 0, height)) %>% 
+        select(row_number, height) %>% nest() %>%
+        pwalk(.l = ., .f = update_new_height_variable_w_pwalk)
+
+# inspect new_height
+starwars2 %>% select(height, new_height)
+
+
+###########################################################################################
+
+
+# create a counter, or other placeholder variable, in purrr using the <<- assignement operator to push 
+# <<- pushes assignment up one parent environment
+# this is useful in purrr functions, since a variable assigned in a loop will not retain value in subsequent iterations
+# instead, the variable will always re-initialize each iteration at its value in the parent environment
+
+# initialize counter outside function
+counter <- 0
+# rm(counter)
+
+# create update_counter function
+update_counter <- function(...) {
+        
+        # update counter
+        # using normal assignment operator will result in counter always = 1, because it initializes each loop = 0
+        # counter <- counter + 1
+        counter <<- counter + 1
+        counter
+}
+
+# call function
+map(.x = 10:15, .f = update_counter)
+
+
+###################################################################################
+
+
 # create new variable using mutate computed by mapping function to an existing variable
 # by default, map will apply function to all variables when passed a tbl
 # obviously you don't need to map a simple function adding one, but this can handle more complex functions
@@ -49,7 +128,7 @@ pmap_dfr(.l = starwars %>% head(), .f = add_mass_and_height_w_error)
 
 
 # create nested_add_mass_and_height function
-nested_add_mass_and_height <- function(data, string_value, ...) {
+nested_add_mass_and_height <- function(data, ...) {
         
         # add mass and height
         return(tibble(mass = data %>% pull(mass), height = data %>% pull(height),
@@ -160,32 +239,6 @@ pmap(.l = test_tbl, .f = combine_var1_and_var2)
 test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2)
 test_tbl %>% pmap(.l = ., .f = function(var1, var2, ...) { var1 + var2 })
 test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2) %>% unlist() %>% tibble(combined_var = .)
-
-
-###################################################
-
-
-# create a counter, or other placeholder variable, in purrr using the <<- assignement operator to push 
-# <<- pushes assignment up one parent environment
-# this is useful in purrr functions, since a variable assigned in a loop will not retain value in subsequent iterations
-# instead, the variable will always re-initialize each iteration at its value in the parent environment
-
-# initialize counter outside function
-counter <- 0
-# rm(counter)
-
-# create update_counter function
-update_counter <- function(...) {
-        
-        # update counter
-        # using normal assignment operator will result in counter always = 1, because it initializes each loop = 0
-        # counter <- counter + 1
-        counter <<- counter + 1
-        counter
-}
-
-# call function
-map(.x = 10:15, .f = update_counter)
 
 
 ###################################################
