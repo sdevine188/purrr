@@ -43,13 +43,13 @@ update_new_height_variable_w_pwalk <- function(data, ...) {
         
         # update starwars2 new_height variable
         starwars2$new_height[data %>% pull(row_number)] <<- data %>% pull(height) + 1
-        print(str_c("the new_height value is ", starwars2$new_height[data %>% pull(row_number)]))
 }
 
 # call update_new_height_variable_w_pwalk
-starwars %>% mutate(row_number = row_number(), height = ifelse(is.na(height), 0, height)) %>% 
-        select(row_number, height) %>% nest() %>%
-        pwalk(.l = ., .f = update_new_height_variable_w_pwalk)
+starwars %>% mutate(row_number_for_grouping = row_number(),
+                    row_number = row_number(), height = ifelse(is.na(height), 0, height)) %>% 
+        select(row_number_for_grouping, row_number, height) %>% group_by(row_number_for_grouping) %>% nest() %>%
+        select(data) %>% pwalk(.l = ., .f = update_new_height_variable_w_pwalk)
 
 # inspect new_height
 starwars2 %>% select(height, new_height)
@@ -111,9 +111,11 @@ starwars %>% select(mass) %>% head()
 
 
 # show that if you want access to all variables in a function used in pmap,
-# the best way is to just pass pmap a nested tbl, which enters function as "data", and has all variables accessible
-# you can't automatically access unnames variables from an unnested tbl via having passed the dots
+# the best way is to just pass pmap a nested tbl that is grouped by row_number, 
+# which then enters function as "data", and is a single row with all variables accessible
+# you can't automatically access unnamed variables from an unnested tbl via having passed the dots
 
+# example to show that you can't access additional unnamed variables passed via dots
 # create add_mass_and_height function
 add_mass_and_height_w_error <- function(mass, height, ...) {
         
@@ -131,12 +133,14 @@ pmap_dfr(.l = starwars %>% head(), .f = add_mass_and_height_w_error)
 nested_add_mass_and_height <- function(data, ...) {
         
         # add mass and height
+        print(str_c("data nrow is: ", data %>% nrow()))
         return(tibble(mass = data %>% pull(mass), height = data %>% pull(height),
                       sum = data %>% mutate(sum = mass + height) %>% pull(sum)))
         
 }
 
-starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., .f = nested_add_mass_and_height)
+starwars %>% head() %>% mutate(row_number = row_number()) %>% group_by(row_number) %>% 
+        nest() %>% select(data) %>% pmap_dfr(.l = ., .f = nested_add_mass_and_height)
 
 
 ##################
@@ -144,6 +148,7 @@ starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., .f = nested_add_mass_and_hei
 
 # create nested_add_mass_and_height_w_other_args function
 nested_add_mass_and_height_w_other_args <- function(data, string_value, ...) {
+        
         
         # add mass and height
         return(tibble(mass = data %>% pull(mass), height = data %>% pull(height),
@@ -153,9 +158,11 @@ nested_add_mass_and_height_w_other_args <- function(data, string_value, ...) {
 }
 
 # note that you can't just pass .l though, the way you pass .x, you need to pass it as just a dot (.)
-starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., 
+starwars %>% head() %>% mutate(row_number = row_number()) %>% group_by(row_number) %>% 
+        nest() %>% select(data) %>% pmap_dfr(.l = ., 
                 .f = ~ nested_add_mass_and_height_w_other_args(data = .l, string_value = "test"))
-starwars %>% head() %>% nest() %>% pmap_dfr(.l = ., 
+starwars %>% head() %>% mutate(row_number = row_number()) %>% group_by(row_number) %>% 
+        nest() %>% select(data) %>% pmap_dfr(.l = ., 
                 .f = ~ nested_add_mass_and_height_w_other_args(data = ., string_value = "test"))
 
 
