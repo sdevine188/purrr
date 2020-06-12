@@ -245,6 +245,7 @@ combine_var1_and_var2 <- function(var1, var2, ...){
 pmap(.l = test_tbl, .f = combine_var1_and_var2)
 test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2)
 test_tbl %>% pmap(.l = ., .f = function(var1, var2, ...) { var1 + var2 })
+test_tbl %>% pmap(.l = ., .f = function(var1, var2, ...) { combine_var1_and_var2(var1 = var1, var2 = var2) })
 test_tbl %>% pmap(.l = ., .f = ~ combine_var1_and_var2(var1, var2, ...))
 test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2) %>% unlist() %>% tibble(combined_var = .)
 
@@ -284,6 +285,17 @@ starwars_w_teams
 
 # can also assign specific variables as arguments directly
 starwars %>% pmap_dfr(.l = ., .f = ~ assign_team(name, species, height, ...))
+
+
+###########################################################################
+
+
+# use pmap to pass variables as named arguments, where function is not necessarily built with purrr in mind
+add_two_numbers <- function(value_1, value_2, ...) {
+        return(sum(value_1, value_2))
+}
+
+starwars %>% pmap(.l = ., .f = function(mass, height, ...) {add_two_numbers(value_1 = mass, value_2 = height)})
 
 
 ###########################################################################
