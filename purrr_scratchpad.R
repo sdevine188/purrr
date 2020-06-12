@@ -245,6 +245,7 @@ combine_var1_and_var2 <- function(var1, var2, ...){
 pmap(.l = test_tbl, .f = combine_var1_and_var2)
 test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2)
 test_tbl %>% pmap(.l = ., .f = function(var1, var2, ...) { var1 + var2 })
+test_tbl %>% pmap(.l = ., .f = ~ combine_var1_and_var2(var1, var2, ...))
 test_tbl %>% pmap(.l = ., .f = combine_var1_and_var2) %>% unlist() %>% tibble(combined_var = .)
 
 
@@ -280,6 +281,9 @@ assign_team <- function(name, species, height, ...) {
 # call assign_team function
 starwars_w_teams <- pmap_dfr(.l = starwars, .f = assign_team)
 starwars_w_teams
+
+# can also assign specific variables as arguments directly
+starwars %>% pmap_dfr(.l = ., .f = ~ assign_team(name, species, height, ...))
 
 
 ###########################################################################
