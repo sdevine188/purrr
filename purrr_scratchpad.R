@@ -5,6 +5,29 @@ library(rlang)
 library(tidyr)
 
 
+#////////////////////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////////////////////////////////////////////////////////
+
+
+# use across (from dplyr technically) 
+
+# can use rowwise() and c_across() to "collect" a bunch of variable columns to mutate, using regex on var names
+starwars %>% mutate(height_2 = 1, ignore_height = height - 1) %>%
+        rowwise() %>% mutate(sum_across_height = sum(c_across(cols = matches("^height")))) %>%
+        select(height, height_2, sum_across_height, ignore_height)
+
+# can use across() without rowwise to apply a function across multiple vars
+starwars %>% mutate(hair_color_2 = hair_color, 
+                    across(.cols = matches("^hair_color"), .fns = ~ ifelse(is.na(.x), "test", .x))) %>%
+        select(contains("hair_color"), birth_year)
+
+
+#////////////////////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////////////////////////////////////////////////////////
+
+
 # use walk to get side effect of a function, instead of the output
 # useful for things like updating variables, or printing, etc where you don't want any output
 # to update a local variable from inside a function, use the <<- assignment operator for "one level up" assingments 
